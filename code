@@ -1,0 +1,29 @@
+import pandas as pd
+import csv
+
+chunk_size = 10
+
+fb_chunks = pd.read_csv('facebook_dataset.csv', chunksize=chunk_size, quoting=csv.QUOTE_NONE, on_bad_lines='skip')
+gg_chunks = pd.read_csv('google_dataset.csv', chunksize=chunk_size, quoting=csv.QUOTE_NONE, on_bad_lines='skip')
+wb_chunks = pd.read_csv('website_dataset.csv', chunksize=chunk_size, delimiter=';' , quoting=csv.QUOTE_NONE, on_bad_lines='skip')
+
+def clean_phone(phone_number):
+    return ''.join(filter(str.isdigit, str(phone_number)))
+
+output_file = 'merged_dataset.csv'
+first_chunk = True
+
+for fb_chunk, gg_chunk, wb_chunk in zip(fb_chunks, gg_chunks, wb_chunks):
+
+    fb_chunk['phone'] = fb_chunk['phone'].apply(clean_phone)
+    gg_chunk['phone'] = gg_chunk['phone'].apply(clean_phone)
+    wb_chunk['phone'] = wb_chunk['phone'].apply(clean_phone)
+
+    merged_chunk = pd.merge(fb_chunk, gg_chunk, on='phone', how='outer', suffixes=('_fb', '_gg'))
+    merged_chunk = pd.merge(merged_chunk, wb_chunk, on='phone', how='outer')
+
+    merged_chunk.to_csv(output_file, mode='a', header=first_chunk, index=False)
+
+    first_chunk = False
+
+print("Fisiere unite")
